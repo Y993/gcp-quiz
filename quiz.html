@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#12325B">
+<title>GCP ACE 問題演習</title>
+<style>
+:root {
+  --navy:#12325B; --blue:#1565C0; --accent:#1A73E8;
+  --green:#1E8E3E; --green-light:#E6F4EA;
+  --yellow:#F9A825; --yellow-light:#FFF8E1;
+  --red:#C5221F; --red-light:#FCE8E6;
+  --grey:#F8F9FA; --card:#fff; --border:#E0E0E0;
+  --text:#202124; --text2:#5F6368;
+  --accent-light:#E8F0FE;
+  --header-h:56px;
+  --radius:12px; --shadow:0 2px 8px rgba(0,0,0,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;
+  background:var(--grey);color:var(--text);font-size:16px;line-height:1.7;
+  padding-bottom:calc(env(safe-area-inset-bottom,0px) + 16px)}
+
+/* Header */
+#header{position:sticky;top:0;left:0;right:0;background:var(--navy);
+  display:flex;align-items:center;padding:0 16px;z-index:100;gap:10px;
+  height:var(--header-h);padding-top:env(safe-area-inset-top,0)}
+#header h1{flex:1;color:#fff;font-size:16px;font-weight:700}
+#reset-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;
+  padding:6px 12px;font-size:13px;cursor:pointer;white-space:nowrap}
+#reset-btn:active{background:rgba(255,255,255,.25)}
+
+/* Stats bar */
+#stats-bar{background:var(--navy);padding:0 16px 14px;
+  padding-top:0}
+.stats-row{display:flex;gap:12px;padding-bottom:4px}
+.stat-chip{flex:1;background:rgba(255,255,255,.12);border-radius:8px;
+  padding:8px 4px;text-align:center;color:#fff}
+.stat-chip .num{font-size:20px;font-weight:700;display:block}
+.stat-chip .lbl{font-size:11px;opacity:.75}
+#prog-bar{height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin-top:4px}
+#prog-fill{height:100%;background:#4CAF50;border-radius:2px;transition:.4s}
+
+/* Category filter */
+#cat-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;background:#fff;
+  border-bottom:1px solid var(--border);padding:10px 12px;
+  display:flex;gap:8px;scrollbar-width:none}
+#cat-scroll::-webkit-scrollbar{display:none}
+.cat-btn{flex-shrink:0;background:var(--grey);border:1.5px solid var(--border);
+  border-radius:20px;padding:6px 14px;font-size:13px;cursor:pointer;
+  color:var(--text2);font-weight:600;white-space:nowrap;transition:.15s}
+.cat-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.cat-btn:active{opacity:.75}
+
+/* Count bar */
+#count-bar{padding:10px 16px 4px;font-size:13px;color:var(--text2)}
+
+/* Main */
+main{padding:8px 12px 8px}
+
+/* Question card */
+.q-card{background:var(--card);border-radius:var(--radius);margin-bottom:14px;
+  overflow:hidden;box-shadow:var(--shadow);border:2px solid transparent;transition:.2s}
+.q-card.correct{border-color:var(--green)}
+.q-card.wrong{border-color:var(--red)}
+.q-head{padding:14px 14px 10px}
+.q-meta{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.q-num{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.5px}
+.q-cat{background:var(--accent-light);color:var(--accent);border-radius:10px;
+  padding:2px 8px;font-size:11px;font-weight:600}
+.q-badge{margin-left:auto;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
+.q-badge.ok{background:var(--green-light);color:var(--green)}
+.q-badge.ng{background:var(--red-light);color:var(--red)}
+.q-text{font-size:14px;font-weight:600;line-height:1.6;color:var(--text)}
+
+/* Options */
+.q-opts{padding:0 10px 6px;border-top:1px solid var(--border)}
+.q-opt{display:flex;align-items:flex-start;gap:10px;padding:11px 6px;
+  border-bottom:1px solid var(--grey);cursor:pointer;border-radius:8px;
+  transition:.12s;-webkit-user-select:none;user-select:none}
+.q-opt:last-child{border-bottom:none}
+.q-opt:active:not(.disabled){background:var(--grey)}
+.q-opt.disabled{cursor:default}
+.q-opt-label{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;
+  flex-shrink:0;transition:.2s;color:var(--text2)}
+.q-opt.selected .q-opt-label{background:var(--accent);border-color:var(--accent);color:#fff}
+.q-opt.correct-ans .q-opt-label{background:var(--green);border-color:var(--green);color:#fff}
+.q-opt.wrong-sel .q-opt-label{background:var(--red);border-color:var(--red);color:#fff}
+.q-opt-text{flex:1;line-height:1.5;padding-top:4px;font-size:14px}
+
+/* Explanation */
+.q-exp{display:none;padding:12px 14px;background:var(--accent-light);
+  border-top:2px solid var(--accent);font-size:13px;line-height:1.65;color:var(--text)}
+.q-exp.show{display:block}
+.q-exp-label{font-weight:700;color:var(--accent);font-size:12px;margin-bottom:5px}
+.q-exp.correct-exp{background:var(--green-light);border-color:var(--green)}
+.q-exp.correct-exp .q-exp-label{color:var(--green)}
+.q-exp.wrong-exp{background:var(--red-light);border-color:var(--red)}
+.q-exp.wrong-exp .q-exp-label{color:var(--red)}
+
+/* Reveal button */
+.q-reveal{width:100%;padding:11px;background:none;border:none;
+  border-top:1px solid var(--border);font-size:13px;color:var(--accent);
+  cursor:pointer;font-weight:600}
+.q-reveal:active{background:var(--grey)}
+
+/* Empty state */
+#empty{display:none;text-align:center;padding:48px 24px;color:var(--text2);font-size:15px}
+
+/* Modal overlay */
+#modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;
+  align-items:center;justify-content:center;padding:24px}
+#modal.show{display:flex}
+.modal-box{background:#fff;border-radius:16px;padding:24px;max-width:340px;width:100%;
+  box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.modal-box h2{font-size:17px;font-weight:700;margin-bottom:10px;color:var(--navy)}
+.modal-box p{font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:20px}
+.modal-btns{display:flex;gap:10px}
+.modal-btns button{flex:1;padding:12px;border:none;border-radius:10px;font-size:15px;
+  font-weight:700;cursor:pointer}
+.btn-cancel{background:var(--grey);color:var(--text)}
+.btn-ok{background:var(--red);color:#fff}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>GCP ACE 問題演習</h1>
+  <button id="reset-btn" onclick="showModal()">リセット</button>
+</div>
+
+<div id="stats-bar">
+  <div class="stats-row">
+    <div class="stat-chip"><span class="num" id="stat-total">0</span><span class="lbl">全問</span></div>
+    <div class="stat-chip"><span class="num" id="stat-answered">0</span><span class="lbl">回答済</span></div>
+    <div class="stat-chip"><span class="num" id="stat-correct">0</span><span class="lbl">正解</span></div>
+    <div class="stat-chip"><span class="num" id="stat-wrong">0</span><span class="lbl">不正解</span></div>
+  </div>
+  <div id="prog-bar"><div id="prog-fill"></div></div>
+</div>
+
+<div id="cat-scroll">
+  <button class="cat-btn active" data-cat="all" onclick="filterCat(this,'all')">すべて</button>
+  <button class="cat-btn" data-cat="リソース管理" onclick="filterCat(this,'リソース管理')">リソース管理</button>
+  <button class="cat-btn" data-cat="IAM" onclick="filterCat(this,'IAM')">IAM</button>
+  <button class="cat-btn" data-cat="Compute Engine" onclick="filterCat(this,'Compute Engine')">Compute Engine</button>
+  <button class="cat-btn" data-cat="コンテナ" onclick="filterCat(this,'コンテナ')">コンテナ</button>
+  <button class="cat-btn" data-cat="ストレージ・DB" onclick="filterCat(this,'ストレージ・DB')">ストレージ・DB</button>
+  <button class="cat-btn" data-cat="ネットワーク" onclick="filterCat(this,'ネットワーク')">ネットワーク</button>
+  <button class="cat-btn" data-cat="運用・監視" onclick="filterCat(this,'運用・監視')">運用・監視</button>
+  <button class="cat-btn" data-cat="課金・IaC" onclick="filterCat(this,'課金・IaC')">課金・IaC</button>
+</div>
+
+<div id="count-bar"></div>
+
+<main id="main"></main>
+<div id="empty">このカテゴリの問題はありません</div>
+
+<!-- Reset confirmation modal -->
+<div id="modal">
+  <div class="modal-box">
+    <h2>回答をリセット</h2>
+    <p>全問題の回答履歴を削除します。この操作は元に戻せません。</p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="hideModal()">キャンセル</button>
+      <button class="btn-ok" onclick="resetAll()">リセット</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Question data ──────────────────────────────────────────────
+const QUESTIONS = [
+  // リソース管理
+  {id:'q01',cat:'リソース管理',
+   text:'本番環境と開発環境を明確に分離し、それぞれに個別の IAM ポリシーと課金を適用したいです。最も適切な構成はどれですか。',
+   opts:['1 つのプロジェクト内でラベルで本番と開発を区別する','本番用・開発用のフォルダをそれぞれ作り、配下に別プロジェクトを置く','リソースを異なるリージョンに分散させる','組織を 2 つ作成してそれぞれに割り当てる'],
+   correct:'B',
+   exp:'フォルダはプロジェクトをグループ化し、IAM やポリシーをまとめて適用するための構造です。課金とリソースはプロジェクト単位で分離されるため、本番・開発を別プロジェクトにしてフォルダで管理するのが正しい設計です。'},
+  {id:'q02',cat:'リソース管理',
+   text:'gcloud compute instances create を実行したところ API エラーが返りました。IAM 権限は正しく設定されています。まず確認すべきことは？',
+   opts:['ゾーンを別のリージョンに変更する','Compute Engine API が有効化されているか確認する','VM のマシンタイプを変更する','課金先アカウントを削除する'],
+   correct:'B',
+   exp:'サービスを使う前に API の有効化が必要です。gcloud services enable compute.googleapis.com で確認・有効化します。'},
+  {id:'q03',cat:'リソース管理',
+   text:'プロジェクトの識別子について、正しい説明はどれですか。',
+   opts:['プロジェクト ID はシステムが自動採番する数値である','プロジェクト名はグローバルに一意でなければならない','プロジェクト ID は作成後に変更できない','プロジェクト番号は後から変更できる'],
+   correct:'C',
+   exp:'プロジェクト ID はグローバルに一意で、作成後は変更できません。プロジェクト名は変更可能で一意でなくてよく、プロジェクト番号はシステムが自動採番します。'},
+
+  // IAM
+  {id:'q04',cat:'IAM',
+   text:'VM が Cloud Storage バケットにアクセスする必要があります。セキュリティのベストプラクティスに最も沿った方法はどれですか。',
+   opts:['VM 内にサービスアカウントの JSON 鍵ファイルを保存する','最小権限のサービスアカウントを VM に割り当てる','Owner ロールを VM に付与する','すべての VM に共通 SA を使い回す'],
+   correct:'B',
+   exp:'鍵ファイルの配布は漏洩リスクがあり最終手段です。最小権限の事前定義ロールを持つサービスアカウントを VM に割り当てるのがベストプラクティスです。'},
+  {id:'q05',cat:'IAM',
+   text:'全プロジェクトで外部 IP アドレスを VM に割り当てることを禁止したいです。最も適切な方法はどれですか。',
+   opts:['各プロジェクトに IAM ポリシーを手動で設定する','組織レベルで外部 IP 割り当てを禁じる組織ポリシーを設定する','全 VM のファイアウォールルールを手動更新する','各プロジェクトの Editor ロールを削除する'],
+   correct:'B',
+   exp:'組織ポリシーは組織・フォルダ・プロジェクト全体に制約を強制できます。IAM は権限の付与であり、禁止のガードレールには組織ポリシーが適しています。'},
+  {id:'q06',cat:'IAM',
+   text:'Compute Engine のインスタンス管理権限だけを開発チームに与えたいです。最も適切なロールはどれですか。',
+   opts:['roles/owner','roles/editor','roles/compute.instanceAdmin.v1','roles/viewer'],
+   correct:'C',
+   exp:'最小権限の原則から、目的に合った事前定義ロールを選びます。Owner や Editor はプロジェクト全体に広すぎるため不適切です。'},
+  {id:'q07',cat:'IAM',
+   text:'Cloud Storage バケット内のオブジェクトの読み取りだけを複数の開発者に許可したいです。最小権限の原則に基づく最適な方法はどれですか。',
+   opts:['プロジェクトに Editor 基本ロールを付与する','バケットレベルで roles/storage.objectViewer を付与する','プロジェクトに Owner ロールを付与する','バケットを allUsers に公開する'],
+   correct:'B',
+   exp:'最小権限の原則から、必要な権限だけを持つ事前定義ロールを最も狭いスコープ（バケット）に付与します。Editor や Owner はプロジェクト全体に広すぎます。'},
+  {id:'q08',cat:'IAM',
+   text:'全プロジェクトで「特定のリージョン以外でのリソース作成を禁止」したいです。最も適切な方法はどれですか。',
+   opts:['各プロジェクトの IAM ロールをすべて削除する','組織レベルでリソースロケーションの制限に関する組織ポリシーを設定する','全プロジェクトにファイアウォールルールを設定する','すべての VM を削除して再作成する'],
+   correct:'B',
+   exp:'組織ポリシーは組織・フォルダ・プロジェクト全体に制約を強制できます。リソースロケーション制約（constraints/gcp.resourceLocations）を設定することで特定リージョン以外を禁止できます。'},
+
+  // Compute Engine
+  {id:'q09',cat:'Compute Engine',
+   text:'トラフィックが時間帯で大きく変動します。VM 台数を自動で増減させ、かつゾーン障害にも耐える構成はどれですか。',
+   opts:['大きな VM を 1 台起動し、スペックを手動変更する','インスタンステンプレートからリージョン MIG を作り、自動スケールを設定する','固定台数の VM を複数ゾーンに手動で配置する','ローカル SSD を使って I/O を高速化する'],
+   correct:'B',
+   exp:'リージョン MIG は複数ゾーンに VM を分散し、自動スケールで台数を動的に増減できます。ゾーン障害耐性と負荷対応を同時に満たします。'},
+  {id:'q10',cat:'Compute Engine',
+   text:'中断されても再実行できるバッチ処理でコストを最小化したいです。最適な VM の種類はどれですか。',
+   opts:['確約利用割引（CUD）を適用した N2 VM','Spot VM','GPU を搭載したアクセラレータ最適化 VM','リージョン永続ディスクを持つ VM'],
+   correct:'B',
+   exp:'中断耐性のあるバッチには Spot VM が最もコスト効率が高いです。CUD は長期間安定稼働するワークロードに向いています。'},
+  {id:'q11',cat:'Compute Engine',
+   text:'ホストのメンテナンス時に VM を停止させない Google Cloud 独自の機能はどれですか。',
+   opts:['スナップショット','ライブマイグレーション','ローカル SSD','カスタムマシンタイプ'],
+   correct:'B',
+   exp:'ライブマイグレーションにより、Google Cloud はホストのメンテ時に VM を別ホストへ無停止で移動させます。Google Cloud 独自の機能です。'},
+  {id:'q12',cat:'Compute Engine',
+   text:'VM のメンテナンス時にサービスを停止させたくありません。Google Cloud の何という機能がこれを実現しますか。',
+   opts:['スナップショット','ライブマイグレーション','確約利用割引','Spot VM'],
+   correct:'B',
+   exp:'ライブマイグレーションにより、ホストのメンテ時に VM を別のホストへ無停止で移動させます。Google Cloud 独自の機能です。'},
+
+  // コンテナ・サーバーレス
+  {id:'q13',cat:'コンテナ',
+   text:'コンテナ化アプリを、トラフィックがない時はコストゼロにし、インフラ管理も最小化したいです。最適なサービスはどれですか。',
+   opts:['GKE Standard クラスタで常時 3 台起動','Cloud Run','Compute Engine の MIG','App Engine flexible（最小インスタンス 1）'],
+   correct:'B',
+   exp:'Cloud Run はゼロスケールとインフラ管理不要を両立するサーバーレスコンテナサービスです。'},
+  {id:'q14',cat:'コンテナ',
+   text:'Cloud Storage にファイルがアップロードされるたびに処理する軽量な関数を実行したいです。最も適したサービスはどれですか。',
+   opts:['GKE の CronJob','Cloud Run の常時起動サービス','Cloud Functions（Cloud Storage トリガー）','Compute Engine の定期ポーリング'],
+   correct:'C',
+   exp:'Cloud Functions は Cloud Storage のオブジェクト変更イベントをトリガーにして関数を実行できます。イベント駆動の軽量処理に最適です。'},
+  {id:'q15',cat:'コンテナ',
+   text:'新バージョンのコンテナアプリをまず 10% のトラフィックだけに流して動作確認したいです。最適なサービスと機能はどれですか。',
+   opts:['GKE に 2 つのデプロイメントを作り手動で切り替える','Cloud Run のリビジョンとトラフィック分割機能を使う','Compute Engine の MIG でカナリアデプロイを設定する','App Engine flexible 環境を使う'],
+   correct:'B',
+   exp:'Cloud Run はデプロイのたびにリビジョンを作成し、トラフィックを割合で分割できます。カナリアリリースを最小の手間で実現できます。'},
+  {id:'q16',cat:'コンテナ',
+   text:'プライベートな GKE クラスタのノードが外部リポジトリからコンテナイメージをプルできません。最も可能性が高い原因はどれですか。',
+   opts:['クラスタのリージョンが間違っている','ノードが外部 IP を持たないため Cloud NAT が必要','kubectl のバージョンが古い','Artifact Registry が別リージョンにある'],
+   correct:'B',
+   exp:'プライベートクラスタのノードは外部 IP を持ちません。外部レジストリにアクセスするには Cloud NAT が必要です。Artifact Registry を使うか Cloud NAT を設定します。'},
+
+  // ストレージ・DB
+  {id:'q17',cat:'ストレージ・DB',
+   text:'世界中のユーザーに対し、強整合性を保ちながら水平スケールできるリレーショナル DB が必要です。最適なサービスはどれですか。',
+   opts:['Cloud SQL（PostgreSQL）','Bigtable','Spanner','Firestore'],
+   correct:'C',
+   exp:'Spanner はグローバル分散・強整合性・水平スケールを兼ね備えた唯一のマネージド RDB です。99.999% の SLA を持ちます。'},
+  {id:'q18',cat:'ストレージ・DB',
+   text:'ログを 7 年間保管する必要があります。ほとんどアクセスしません。コスト最適なストレージクラスはどれですか。',
+   opts:['Standard','Nearline','Coldline','Archive'],
+   correct:'D',
+   exp:'年 1 回以下のアクセスで長期保管なら Archive が最安です。最低保存期間（365 日）を踏まえ、短期間での削除計画がない用途に向いています。'},
+  {id:'q19',cat:'ストレージ・DB',
+   text:'サーバーを管理せず、巨大なデータセットに SQL で分析クエリを実行したいです。適切なサービスはどれですか。',
+   opts:['Cloud SQL','Memorystore','BigQuery','Firestore'],
+   correct:'C',
+   exp:'BigQuery はサーバーレスのデータウェアハウスで、クラスタ管理なしに SQL でペタバイト規模を分析できます。'},
+  {id:'q20',cat:'ストレージ・DB',
+   text:'BigQuery のクエリコストが高くなっています。スキャン量を減らすのに最も効果的な手法はどれですか。',
+   opts:['テーブルを複数のリージョンに複製する','テーブルをパーティション分割し、クエリの WHERE 句でパーティション列をフィルタする','より大きな Compute Engine VM でクエリを実行する','Memorystore にデータをキャッシュする'],
+   correct:'B',
+   exp:'BigQuery のオンデマンド課金はスキャンしたデータ量に基づきます。パーティション分割＋フィルタでスキャン量を劇的に削減できます。'},
+  {id:'q21',cat:'ストレージ・DB',
+   text:'IoT デバイスから毎秒数百万件のセンサーデータが書き込まれます。低レイテンシで大規模書き込みに最適な DB はどれですか。',
+   opts:['Cloud SQL','Bigtable','BigQuery','Firestore'],
+   correct:'B',
+   exp:'Bigtable は超大規模な書き込みと低レイテンシ読み取りに特化したワイドカラム型 NoSQL です。時系列データや IoT データの格納に最も適しています。'},
+
+  // ネットワーク
+  {id:'q22',cat:'ネットワーク',
+   text:'東京と大阪の VM を同じ VPC のプライベート IP で通信させたいです。どのような構成にすればよいですか。',
+   opts:['東京と大阪に別々の VPC を作り VPC ピアリングで接続する','1 つの VPC に東京と大阪のサブネットを作り、同じ VPC 内に VM を配置する','Cloud VPN でリージョン間を接続する','外部 IP を使いインターネット経由で通信する'],
+   correct:'B',
+   exp:'VPC はグローバルリソースです。1 つの VPC に複数リージョンのサブネットを持てるため、別 VPC を作ったりピアリングしたりする必要はありません。同じ VPC 内ならプライベート IP でリージョンをまたいで通信できます。'},
+  {id:'q23',cat:'ネットワーク',
+   text:'外部 IP を持たないプライベートな VM が外部パッケージリポジトリに接続するために必要なサービスはどれですか。',
+   opts:['Cloud Armor','Cloud NAT','Cloud DNS','VPC ピアリング'],
+   correct:'B',
+   exp:'Cloud NAT を使うと、外部 IP を持たないインスタンスが外向きの通信を行えます。外部からの着信は受け付けないため、セキュリティを保ちながら外部接続できます。'},
+  {id:'q24',cat:'ネットワーク',
+   text:'複数プロジェクトでネットワークを一元管理し、同じ VPC のサブネットを共有して使えるようにしたいです。最適な構成はどれですか。',
+   opts:['各プロジェクトに VPC を作り VPC ピアリングを設定する','ホストプロジェクトに VPC を作り Shared VPC でサービスプロジェクトに共有する','全リソースを 1 つのプロジェクトに集約する','Cloud VPN で各プロジェクトを接続する'],
+   correct:'B',
+   exp:'Shared VPC はホストプロジェクトのネットワークを複数のサービスプロジェクトで共有する仕組みです。ネットワーク一元管理とプロジェクト分離を両立できます。'},
+  {id:'q25',cat:'ネットワーク',
+   text:'複数チームがそれぞれのプロジェクトを持ちながら、ネットワーク構成は一元管理したいです。最も適切な構成はどれですか。',
+   opts:['各チームが VPC を作り VPC ピアリングで接続する','ホストプロジェクトに VPC を作り Shared VPC で各チームのプロジェクトに共有する','全リソースを 1 つのプロジェクトに集約する','Cloud VPN で各プロジェクトを接続する'],
+   correct:'B',
+   exp:'Shared VPC はホストプロジェクトのネットワークを複数のサービスプロジェクトで共有します。ネットワーク一元管理とプロジェクト分離の両立ができます。'},
+
+  // 運用・監視
+  {id:'q26',cat:'運用・監視',
+   text:'本番 VM の CPU 使用率が 80% を超えたら担当者に通知したいです。最も適切な設定はどれですか。',
+   opts:['Cloud Logging のシンクを BigQuery に設定する','Cloud Monitoring のアラートポリシーを作成し、しきい値と通知チャネルを設定する','Cloud Trace でスパンを確認する','監査ログを有効化する'],
+   correct:'B',
+   exp:'メトリクスのしきい値超過を通知するには Cloud Monitoring のアラートポリシーを設定します。通知チャネル（メール・Slack 等）も合わせて設定します。'},
+  {id:'q27',cat:'運用・監視',
+   text:'全プロジェクトのログを 2 年間保管し、SQL で分析できるようにしたいです。最も適切な方法はどれですか。',
+   opts:['ログを VM のローカルディスクに保存する','Cloud Logging のシンクで BigQuery にエクスポートし、保持期間を設定する','Cloud Trace を有効化する','監査ログのデータアクセスログを無効のままにする'],
+   correct:'B',
+   exp:'Cloud Logging のシンクで BigQuery へエクスポートすると、長期保管しながら SQL で分析できます。'},
+  {id:'q28',cat:'運用・監視',
+   text:'「誰が VM を削除したか」を事後に確認したいです。どこを確認しますか。',
+   opts:['Cloud Monitoring のカスタムメトリクス','Cloud Audit Logs の管理アクティビティログ','Cloud Trace のスパン','データアクセスログ'],
+   correct:'B',
+   exp:'管理アクティビティログは VM の作成・削除などの管理操作を常時記録しています。誰がいつ何をしたかを確認できます。'},
+
+  // 課金・IaC
+  {id:'q29',cat:'課金・IaC',
+   text:'月のクラウド支出が予算を超えた場合に自動でリソースを停止したいです。最も適切な実装はどれですか。',
+   opts:['予算アラートを設定するだけで自動停止される','予算アラートを Pub/Sub トピックに連携し、Cloud Functions で停止処理を実装する','請求先アカウントを削除する','すべての VM の自動スケールを無効にする'],
+   correct:'B',
+   exp:'予算アラートはデフォルトで「通知のみ」です。自動停止が必要な場合は、アラートを Pub/Sub に連携し、そのメッセージを受け取った Cloud Functions や Cloud Run でリソース停止処理を実装します。'},
+  {id:'q30',cat:'課金・IaC',
+   text:'複数の環境（本番・ステージング・開発）に同じインフラ構成を繰り返しデプロイしたいです。最も推奨される方法はどれですか。',
+   opts:['コンソールで毎回手動作業を繰り返す','Terraform でインフラをコード化し、環境ごとに変数を変えてデプロイする','スナップショットをコピーして環境を複製する','Cloud Shell のヒストリからコマンドを再実行する'],
+   correct:'B',
+   exp:'Terraform でインフラをコード化し、変数（variables）で環境差分を吸収する構成が再現性・管理性ともに最も優れています。'},
+  {id:'q31',cat:'課金・IaC',
+   text:'Cloud Run サービスが Cloud SQL に接続するための認証情報を最もセキュアに管理する方法はどれですか。',
+   opts:['パスワードをソースコードにハードコーディングする','Secret Manager にパスワードを保存し、Cloud Run の SA に Secret アクセサーロールを付与する','パスワードを Cloud Storage バケットに保存する','Cloud Run のすべてのサービスに Owner ロールを付与する'],
+   correct:'B',
+   exp:'Secret Manager で機密情報を安全に管理し、最小権限のサービスアカウントでアクセスするパターンがベストプラクティスです。ハードコーディングや権限過多は避けます。'},
+];
+
+const LABELS = ['A','B','C','D'];
+const STORAGE_KEY = 'gcp_quiz_v1';
+
+// ── State ──────────────────────────────────────────────────────
+let answers = {};  // { qId: { selected: 'B', correct: true } }
+let currentCat = 'all';
+
+function loadAnswers() {
+  try { answers = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+  catch { answers = {}; }
+}
+function saveAnswers() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(answers));
+}
+
+// ── Render ─────────────────────────────────────────────────────
+function render() {
+  const main = document.getElementById('main');
+  main.innerHTML = '';
+  const filtered = currentCat === 'all'
+    ? QUESTIONS
+    : QUESTIONS.filter(q => q.cat === currentCat);
+
+  document.getElementById('count-bar').textContent =
+    `${filtered.length} 問表示中`;
+  document.getElementById('empty').style.display =
+    filtered.length === 0 ? 'block' : 'none';
+
+  filtered.forEach((q, qi) => {
+    const ans = answers[q.id];
+    const answered = !!ans;
+    const correct = answered && ans.correct;
+
+    const card = document.createElement('div');
+    card.className = 'q-card' + (answered ? (correct ? ' correct' : ' wrong') : '');
+    card.id = 'card-'+q.id;
+
+    // Badge
+    const badge = answered
+      ? `<span class="q-badge ${correct ? 'ok' : 'ng'}">${correct ? '✓ 正解' : '✗ 不正解'}</span>`
+      : '';
+
+    // Options HTML
+    const optsHtml = q.opts.map((opt, i) => {
+      const lbl = LABELS[i];
+      let cls = '';
+      if (answered) {
+        if (lbl === q.correct) cls = 'correct-ans disabled';
+        else if (ans.selected === lbl) cls = 'wrong-sel disabled';
+        else cls = 'disabled';
+      }
+      return `<div class="q-opt ${cls}" onclick="selectOpt('${q.id}','${lbl}')">
+        <div class="q-opt-label">${lbl}</div>
+        <div class="q-opt-text">${opt}</div>
+      </div>`;
+    }).join('');
+
+    // Explanation
+    const expCls = answered ? (correct ? 'correct-exp' : 'wrong-exp') : '';
+    const expLabel = answered ? (correct ? '✅ 正解：'+q.correct : '❌ 不正解 — 正解：'+q.correct) : '解説';
+    const expShow = answered ? 'show' : '';
+
+    card.innerHTML = `
+      <div class="q-head">
+        <div class="q-meta">
+          <span class="q-num">Q${String(qi+1).padStart(2,'0')}</span>
+          <span class="q-cat">${q.cat}</span>
+          ${badge}
+        </div>
+        <div class="q-text">${q.text}</div>
+      </div>
+      <div class="q-opts">${optsHtml}</div>
+      <div class="q-exp ${expCls} ${expShow}" id="exp-${q.id}">
+        <div class="q-exp-label">${expLabel}</div>
+        ${q.exp}
+      </div>
+      <button class="q-reveal" onclick="toggleExp('${q.id}',this)">${answered ? '解説を閉じる ▲' : '解説を見る ▼'}</button>
+    `;
+    main.appendChild(card);
+  });
+
+  updateStats();
+}
+
+function toggleExp(qid, btn) {
+  const exp = document.getElementById('exp-'+qid);
+  const shown = exp.classList.toggle('show');
+  btn.textContent = shown ? '解説を閉じる ▲' : '解説を見る ▼';
+}
+
+function selectOpt(qid, lbl) {
+  if (answers[qid]) return; // already answered
+  const q = QUESTIONS.find(q => q.id === qid);
+  const isCorrect = lbl === q.correct;
+  answers[qid] = { selected: lbl, correct: isCorrect };
+  saveAnswers();
+  updateCard(q, lbl, isCorrect);
+  updateStats();
+}
+
+function updateCard(q, selected, isCorrect) {
+  const card = document.getElementById('card-'+q.id);
+  card.classList.add(isCorrect ? 'correct' : 'wrong');
+
+  // Update badge
+  const meta = card.querySelector('.q-meta');
+  const badge = document.createElement('span');
+  badge.className = 'q-badge ' + (isCorrect ? 'ok' : 'ng');
+  badge.textContent = isCorrect ? '✓ 正解' : '✗ 不正解';
+  meta.appendChild(badge);
+
+  // Update options
+  card.querySelectorAll('.q-opt').forEach(el => {
+    el.classList.add('disabled');
+    const lbl = el.querySelector('.q-opt-label').textContent;
+    if (lbl === q.correct) el.classList.add('correct-ans');
+    else if (lbl === selected && !isCorrect) el.classList.add('wrong-sel');
+  });
+
+  // Show explanation
+  const exp = document.getElementById('exp-'+q.id);
+  exp.classList.add('show', isCorrect ? 'correct-exp' : 'wrong-exp');
+  exp.querySelector('.q-exp-label').textContent = isCorrect
+    ? '✅ 正解：'+q.correct
+    : '❌ 不正解 — 正解：'+q.correct;
+
+  const revBtn = card.querySelector('.q-reveal');
+  revBtn.textContent = '解説を閉じる ▲';
+}
+
+function updateStats() {
+  const total = QUESTIONS.length;
+  const vals = Object.values(answers);
+  const answered = vals.length;
+  const correct = vals.filter(v => v.correct).length;
+  const wrong = answered - correct;
+  const pct = total === 0 ? 0 : Math.round(correct / total * 100);
+
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-answered').textContent = answered;
+  document.getElementById('stat-correct').textContent = correct;
+  document.getElementById('stat-wrong').textContent = wrong;
+  document.getElementById('prog-fill').style.width = pct + '%';
+}
+
+// ── Category filter ────────────────────────────────────────────
+function filterCat(btn, cat) {
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentCat = cat;
+  render();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ── Reset ──────────────────────────────────────────────────────
+function showModal() { document.getElementById('modal').classList.add('show'); }
+function hideModal() { document.getElementById('modal').classList.remove('show'); }
+function resetAll() {
+  answers = {};
+  localStorage.removeItem(STORAGE_KEY);
+  hideModal();
+  render();
+}
+
+// ── Start ──────────────────────────────────────────────────────
+loadAnswers();
+render();
+</script>
+</body>
+</html>
