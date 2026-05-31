@@ -34,9 +34,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sa
 #reset-btn:active{background:rgba(255,255,255,.25)}
 
 /* Stats bar */
-#stats-bar{background:var(--navy);padding:0 16px 14px;
-  padding-top:0}
-.stats-row{display:flex;gap:12px;padding-bottom:4px}
+#stats-bar{background:var(--navy);padding:0 16px 14px}
+.stats-row{display:flex;gap:10px;padding-bottom:4px}
 .stat-chip{flex:1;background:rgba(255,255,255,.12);border-radius:8px;
   padding:8px 4px;text-align:center;color:#fff}
 .stat-chip .num{font-size:20px;font-weight:700;display:block}
@@ -67,7 +66,7 @@ main{padding:8px 12px 8px}
 .q-card.correct{border-color:var(--green)}
 .q-card.wrong{border-color:var(--red)}
 .q-head{padding:14px 14px 10px}
-.q-meta{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.q-meta{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
 .q-num{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.5px}
 .q-cat{background:var(--accent-light);color:var(--accent);border-radius:10px;
   padding:2px 8px;font-size:11px;font-weight:600}
@@ -87,7 +86,6 @@ main{padding:8px 12px 8px}
 .q-opt-label{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);
   display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;
   flex-shrink:0;transition:.2s;color:var(--text2)}
-.q-opt.selected .q-opt-label{background:var(--accent);border-color:var(--accent);color:#fff}
 .q-opt.correct-ans .q-opt-label{background:var(--green);border-color:var(--green);color:#fff}
 .q-opt.wrong-sel .q-opt-label{background:var(--red);border-color:var(--red);color:#fff}
 .q-opt-text{flex:1;line-height:1.5;padding-top:4px;font-size:14px}
@@ -111,7 +109,7 @@ main{padding:8px 12px 8px}
 /* Empty state */
 #empty{display:none;text-align:center;padding:48px 24px;color:var(--text2);font-size:15px}
 
-/* Modal overlay */
+/* Modal */
 #modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;
   align-items:center;justify-content:center;padding:24px}
 #modal.show{display:flex}
@@ -144,23 +142,21 @@ main{padding:8px 12px 8px}
 </div>
 
 <div id="cat-scroll">
-  <button class="cat-btn active" data-cat="all" onclick="filterCat(this,'all')">すべて</button>
-  <button class="cat-btn" data-cat="リソース管理" onclick="filterCat(this,'リソース管理')">リソース管理</button>
-  <button class="cat-btn" data-cat="IAM" onclick="filterCat(this,'IAM')">IAM</button>
-  <button class="cat-btn" data-cat="Compute Engine" onclick="filterCat(this,'Compute Engine')">Compute Engine</button>
-  <button class="cat-btn" data-cat="コンテナ" onclick="filterCat(this,'コンテナ')">コンテナ</button>
-  <button class="cat-btn" data-cat="ストレージ・DB" onclick="filterCat(this,'ストレージ・DB')">ストレージ・DB</button>
-  <button class="cat-btn" data-cat="ネットワーク" onclick="filterCat(this,'ネットワーク')">ネットワーク</button>
-  <button class="cat-btn" data-cat="運用・監視" onclick="filterCat(this,'運用・監視')">運用・監視</button>
-  <button class="cat-btn" data-cat="課金・IaC" onclick="filterCat(this,'課金・IaC')">課金・IaC</button>
+  <button class="cat-btn active" onclick="filterCat(this,'all')">すべて</button>
+  <button class="cat-btn" onclick="filterCat(this,'リソース管理')">リソース管理</button>
+  <button class="cat-btn" onclick="filterCat(this,'IAM')">IAM</button>
+  <button class="cat-btn" onclick="filterCat(this,'Compute Engine')">Compute Engine</button>
+  <button class="cat-btn" onclick="filterCat(this,'コンテナ')">コンテナ</button>
+  <button class="cat-btn" onclick="filterCat(this,'ストレージ・DB')">ストレージ・DB</button>
+  <button class="cat-btn" onclick="filterCat(this,'ネットワーク')">ネットワーク</button>
+  <button class="cat-btn" onclick="filterCat(this,'運用・監視')">運用・監視</button>
+  <button class="cat-btn" onclick="filterCat(this,'課金・IaC')">課金・IaC</button>
 </div>
 
 <div id="count-bar"></div>
-
 <main id="main"></main>
 <div id="empty">このカテゴリの問題はありません</div>
 
-<!-- Reset confirmation modal -->
 <div id="modal">
   <div class="modal-box">
     <h2>回答をリセット</h2>
@@ -175,7 +171,7 @@ main{padding:8px 12px 8px}
 <script>
 // ── Question data ──────────────────────────────────────────────
 const QUESTIONS = [
-  // リソース管理
+  // ── リソース管理 ──
   {id:'q01',cat:'リソース管理',
    text:'本番環境と開発環境を明確に分離し、それぞれに個別の IAM ポリシーと課金を適用したいです。最も適切な構成はどれですか。',
    opts:['1 つのプロジェクト内でラベルで本番と開発を区別する','本番用・開発用のフォルダをそれぞれ作り、配下に別プロジェクトを置く','リソースを異なるリージョンに分散させる','組織を 2 つ作成してそれぞれに割り当てる'],
@@ -191,168 +187,294 @@ const QUESTIONS = [
    opts:['プロジェクト ID はシステムが自動採番する数値である','プロジェクト名はグローバルに一意でなければならない','プロジェクト ID は作成後に変更できない','プロジェクト番号は後から変更できる'],
    correct:'C',
    exp:'プロジェクト ID はグローバルに一意で、作成後は変更できません。プロジェクト名は変更可能で一意でなくてよく、プロジェクト番号はシステムが自動採番します。'},
+  {id:'q04',cat:'リソース管理',
+   text:'Cloud Shell を使う主なメリットとして正しいものはどれですか。',
+   opts:['ローカルに gcloud を別途インストールする必要がある','ブラウザから gcloud・kubectl・bq が使える、無料の Linux 環境である','月額費用が発生する','ルートアクセスが必要な操作はすべて不可能である'],
+   correct:'B',
+   exp:'Cloud Shell はブラウザ上で使える無料の Linux 環境です。gcloud・kubectl・bq・Terraform などが事前インストール済みで、Google アカウントで認証済みの状態で起動します。'},
+  {id:'q05',cat:'リソース管理',
+   text:'組織内のすべてのプロジェクトで特定の VM マシンタイプの使用を一括禁止したいです。最も効率的な方法はどれですか。',
+   opts:['各プロジェクト管理者に手動で禁止するよう連絡する','組織ポリシーで制約を組織レベルに設定する','すべてのプロジェクトで IAM を変更する','Terraform でデプロイを制御する'],
+   correct:'B',
+   exp:'組織ポリシーの制約を組織レベルで設定することで、全プロジェクトに一括して強制できます。IAM は権限付与であり、禁止のガードレールには組織ポリシーが適しています。'},
+  {id:'q06',cat:'リソース管理',
+   text:'上位のフォルダに付与した IAM ポリシーは配下のプロジェクトにどう影響しますか。',
+   opts:['影響しない。プロジェクトごとに独立して設定する必要がある','継承される。配下のプロジェクト・リソースに自動で適用される','影響するが、プロジェクト管理者が明示的に有効化する必要がある','フォルダは IAM の適用範囲外である'],
+   correct:'B',
+   exp:'Google Cloud の IAM はリソース階層（組織 → フォルダ → プロジェクト → リソース）に沿って継承されます。上位で付与した権限は下位に自動的に引き継がれます。'},
 
-  // IAM
-  {id:'q04',cat:'IAM',
+  // ── IAM ──
+  {id:'q07',cat:'IAM',
    text:'VM が Cloud Storage バケットにアクセスする必要があります。セキュリティのベストプラクティスに最も沿った方法はどれですか。',
-   opts:['VM 内にサービスアカウントの JSON 鍵ファイルを保存する','最小権限のサービスアカウントを VM に割り当てる','Owner ロールを VM に付与する','すべての VM に共通 SA を使い回す'],
+   opts:['VM 内にサービスアカウントの JSON 鍵ファイルを保存する','最小権限のサービスアカウントを VM に割り当てる','Owner ロールを VM に付与する','すべての VM に共通のサービスアカウントを使い回す'],
    correct:'B',
    exp:'鍵ファイルの配布は漏洩リスクがあり最終手段です。最小権限の事前定義ロールを持つサービスアカウントを VM に割り当てるのがベストプラクティスです。'},
-  {id:'q05',cat:'IAM',
+  {id:'q08',cat:'IAM',
    text:'全プロジェクトで外部 IP アドレスを VM に割り当てることを禁止したいです。最も適切な方法はどれですか。',
    opts:['各プロジェクトに IAM ポリシーを手動で設定する','組織レベルで外部 IP 割り当てを禁じる組織ポリシーを設定する','全 VM のファイアウォールルールを手動更新する','各プロジェクトの Editor ロールを削除する'],
    correct:'B',
    exp:'組織ポリシーは組織・フォルダ・プロジェクト全体に制約を強制できます。IAM は権限の付与であり、禁止のガードレールには組織ポリシーが適しています。'},
-  {id:'q06',cat:'IAM',
+  {id:'q09',cat:'IAM',
    text:'Compute Engine のインスタンス管理権限だけを開発チームに与えたいです。最も適切なロールはどれですか。',
    opts:['roles/owner','roles/editor','roles/compute.instanceAdmin.v1','roles/viewer'],
    correct:'C',
    exp:'最小権限の原則から、目的に合った事前定義ロールを選びます。Owner や Editor はプロジェクト全体に広すぎるため不適切です。'},
-  {id:'q07',cat:'IAM',
+  {id:'q10',cat:'IAM',
    text:'Cloud Storage バケット内のオブジェクトの読み取りだけを複数の開発者に許可したいです。最小権限の原則に基づく最適な方法はどれですか。',
    opts:['プロジェクトに Editor 基本ロールを付与する','バケットレベルで roles/storage.objectViewer を付与する','プロジェクトに Owner ロールを付与する','バケットを allUsers に公開する'],
    correct:'B',
    exp:'最小権限の原則から、必要な権限だけを持つ事前定義ロールを最も狭いスコープ（バケット）に付与します。Editor や Owner はプロジェクト全体に広すぎます。'},
-  {id:'q08',cat:'IAM',
+  {id:'q11',cat:'IAM',
    text:'全プロジェクトで「特定のリージョン以外でのリソース作成を禁止」したいです。最も適切な方法はどれですか。',
    opts:['各プロジェクトの IAM ロールをすべて削除する','組織レベルでリソースロケーションの制限に関する組織ポリシーを設定する','全プロジェクトにファイアウォールルールを設定する','すべての VM を削除して再作成する'],
    correct:'B',
-   exp:'組織ポリシーは組織・フォルダ・プロジェクト全体に制約を強制できます。リソースロケーション制約（constraints/gcp.resourceLocations）を設定することで特定リージョン以外を禁止できます。'},
+   exp:'組織ポリシーの constraints/gcp.resourceLocations を組織レベルで設定することで、特定リージョン以外でのリソース作成を全プロジェクトに一括禁止できます。'},
+  {id:'q12',cat:'IAM',
+   text:'GKE Pod が Google Cloud API を鍵ファイルなしで呼び出すための推奨認証方法はどれですか。',
+   opts:['JSON キーファイルを Pod の環境変数に埋め込む','Workload Identity を使い、Kubernetes SA と Google SA を紐付ける','すべての Pod に Owner ロールを付与する','API キーを ConfigMap に保存する'],
+   correct:'B',
+   exp:'Workload Identity は GKE Pod に JSON 鍵なしで Google Cloud API へのアクセスを与える推奨方法です。KSA（Kubernetes Service Account）と GSA（Google Service Account）を紐付けることで安全に権限委譲できます。'},
+  {id:'q13',cat:'IAM',
+   text:'開発チームメンバーが Cloud Console にアクセスできるのに、特定のプロジェクトのリソースだけ操作できない状態です。最も考えられる原因はどれですか。',
+   opts:['Cloud Shell が起動していない','そのプロジェクトに対するロールが付与されていない','メンバーの Google アカウントが無効になっている','API が有効化されすぎている'],
+   correct:'B',
+   exp:'IAM はプロジェクト単位でロールを付与します。組織・フォルダレベルのロールは継承されますが、そのプロジェクトに直接ロールが付与されていないと操作できません。'},
 
-  // Compute Engine
-  {id:'q09',cat:'Compute Engine',
+  // ── Compute Engine ──
+  {id:'q14',cat:'Compute Engine',
    text:'トラフィックが時間帯で大きく変動します。VM 台数を自動で増減させ、かつゾーン障害にも耐える構成はどれですか。',
    opts:['大きな VM を 1 台起動し、スペックを手動変更する','インスタンステンプレートからリージョン MIG を作り、自動スケールを設定する','固定台数の VM を複数ゾーンに手動で配置する','ローカル SSD を使って I/O を高速化する'],
    correct:'B',
    exp:'リージョン MIG は複数ゾーンに VM を分散し、自動スケールで台数を動的に増減できます。ゾーン障害耐性と負荷対応を同時に満たします。'},
-  {id:'q10',cat:'Compute Engine',
+  {id:'q15',cat:'Compute Engine',
    text:'中断されても再実行できるバッチ処理でコストを最小化したいです。最適な VM の種類はどれですか。',
    opts:['確約利用割引（CUD）を適用した N2 VM','Spot VM','GPU を搭載したアクセラレータ最適化 VM','リージョン永続ディスクを持つ VM'],
    correct:'B',
    exp:'中断耐性のあるバッチには Spot VM が最もコスト効率が高いです。CUD は長期間安定稼働するワークロードに向いています。'},
-  {id:'q11',cat:'Compute Engine',
+  {id:'q16',cat:'Compute Engine',
    text:'ホストのメンテナンス時に VM を停止させない Google Cloud 独自の機能はどれですか。',
    opts:['スナップショット','ライブマイグレーション','ローカル SSD','カスタムマシンタイプ'],
    correct:'B',
    exp:'ライブマイグレーションにより、Google Cloud はホストのメンテ時に VM を別ホストへ無停止で移動させます。Google Cloud 独自の機能です。'},
-  {id:'q12',cat:'Compute Engine',
-   text:'VM のメンテナンス時にサービスを停止させたくありません。Google Cloud の何という機能がこれを実現しますか。',
-   opts:['スナップショット','ライブマイグレーション','確約利用割引','Spot VM'],
+  {id:'q17',cat:'Compute Engine',
+   text:'永続ディスク（PD）の種類のうち、最も読み書きの IOPS が高く、最もコストが高いものはどれですか。',
+   opts:['pd-standard','pd-balanced','pd-ssd','pd-extreme'],
+   correct:'D',
+   exp:'pd-extreme は最高の IOPS とスループットを提供する永続ディスクです。最もコストが高く、高性能データベースなど IOPS 要求が非常に高いワークロードに向いています。'},
+  {id:'q18',cat:'Compute Engine',
+   text:'スナップショットについて正しい説明はどれですか。',
+   opts:['スナップショットはゾーンリソースで、同じゾーンにしか復元できない','スナップショットはグローバルリソースで、任意のゾーン・リージョンにディスクとして復元できる','スナップショットは VM 起動中には取得できない','スナップショットは増分ではなくフル取得のみである'],
    correct:'B',
-   exp:'ライブマイグレーションにより、ホストのメンテ時に VM を別のホストへ無停止で移動させます。Google Cloud 独自の機能です。'},
+   exp:'スナップショットはグローバルリソースです。DR（障害復旧）やリージョン間移行のために、異なるゾーンやリージョンへディスクとして復元できます。また、スナップショットは増分取得に対応しています。'},
+  {id:'q19',cat:'Compute Engine',
+   text:'大量のインメモリ処理（SAP HANA 等）を行うワークロードに最適な Compute Engine マシンファミリーはどれですか。',
+   opts:['汎用（E2）','コンピュート最適化（C2）','メモリ最適化（M2/M3）','アクセラレータ最適化（A2）'],
+   correct:'C',
+   exp:'メモリ最適化ファミリー（M2/M3）は大量のメモリを必要とするワークロード（SAP HANA、大規模インメモリ DB など）に最適化されています。'},
+  {id:'q20',cat:'Compute Engine',
+   text:'持続利用割引（SUD）と確約利用割引（CUD）の説明として正しいものはどれですか。',
+   opts:['SUD は 1 年の確約が必要。CUD は自動適用される','SUD は一定時間稼働すると自動適用。CUD は 1 年/3 年の確約で大幅割引を受ける','SUD は Spot VM にのみ適用される','CUD は E2 マシンタイプには適用されない'],
+   correct:'B',
+   exp:'SUD（持続利用割引）は購入手続き不要で、月の一定割合（約 25%）稼働するだけで自動適用されます。CUD（確約利用割引）は 1 年または 3 年の利用確約でより大きな割引（最大 57%）が得られます。'},
 
-  // コンテナ・サーバーレス
-  {id:'q13',cat:'コンテナ',
+  // ── コンテナ・サーバーレス ──
+  {id:'q21',cat:'コンテナ',
    text:'コンテナ化アプリを、トラフィックがない時はコストゼロにし、インフラ管理も最小化したいです。最適なサービスはどれですか。',
    opts:['GKE Standard クラスタで常時 3 台起動','Cloud Run','Compute Engine の MIG','App Engine flexible（最小インスタンス 1）'],
    correct:'B',
    exp:'Cloud Run はゼロスケールとインフラ管理不要を両立するサーバーレスコンテナサービスです。'},
-  {id:'q14',cat:'コンテナ',
+  {id:'q22',cat:'コンテナ',
    text:'Cloud Storage にファイルがアップロードされるたびに処理する軽量な関数を実行したいです。最も適したサービスはどれですか。',
    opts:['GKE の CronJob','Cloud Run の常時起動サービス','Cloud Functions（Cloud Storage トリガー）','Compute Engine の定期ポーリング'],
    correct:'C',
    exp:'Cloud Functions は Cloud Storage のオブジェクト変更イベントをトリガーにして関数を実行できます。イベント駆動の軽量処理に最適です。'},
-  {id:'q15',cat:'コンテナ',
+  {id:'q23',cat:'コンテナ',
    text:'新バージョンのコンテナアプリをまず 10% のトラフィックだけに流して動作確認したいです。最適なサービスと機能はどれですか。',
    opts:['GKE に 2 つのデプロイメントを作り手動で切り替える','Cloud Run のリビジョンとトラフィック分割機能を使う','Compute Engine の MIG でカナリアデプロイを設定する','App Engine flexible 環境を使う'],
    correct:'B',
    exp:'Cloud Run はデプロイのたびにリビジョンを作成し、トラフィックを割合で分割できます。カナリアリリースを最小の手間で実現できます。'},
-  {id:'q16',cat:'コンテナ',
+  {id:'q24',cat:'コンテナ',
    text:'プライベートな GKE クラスタのノードが外部リポジトリからコンテナイメージをプルできません。最も可能性が高い原因はどれですか。',
    opts:['クラスタのリージョンが間違っている','ノードが外部 IP を持たないため Cloud NAT が必要','kubectl のバージョンが古い','Artifact Registry が別リージョンにある'],
    correct:'B',
    exp:'プライベートクラスタのノードは外部 IP を持ちません。外部レジストリにアクセスするには Cloud NAT が必要です。Artifact Registry を使うか Cloud NAT を設定します。'},
+  {id:'q25',cat:'コンテナ',
+   text:'GKE Autopilot と Standard の違いについて正しい説明はどれですか。',
+   opts:['Autopilot は Standard よりも常に費用が高い','Autopilot はノード管理を Google が担い、Pod 単位課金で運用負荷が低い','Standard は Pod 単位課金だが Autopilot はノード単位課金である','Autopilot ではカスタムノードプールを追加できる'],
+   correct:'B',
+   exp:'GKE Autopilot はノードの管理・スケーリング・セキュリティを Google が自動管理します。Pod 単位で課金されるため、未使用ノードのコストが発生しにくく、運用負荷を大幅に削減できます。'},
+  {id:'q26',cat:'コンテナ',
+   text:'App Engine Standard と Flexible の違いについて正しい説明はどれですか。',
+   opts:['Flexible はゼロにスケールでき Standard はできない','Standard は特定ランタイムで高速起動・ゼロスケール可能。Flexible はカスタムコンテナを使える','Standard のほうがコストが高い','Flexible は東京リージョンでのみ使用できる'],
+   correct:'B',
+   exp:'App Engine Standard は特定言語ランタイム（Python/Java/Go/Node 等）で高速起動・ゼロスケールが可能です。Flexible は Docker コンテナで動作し制約が少ない一方、最小インスタンス 1 台が常時稼働します。'},
+  {id:'q27',cat:'コンテナ',
+   text:'GKE クラスタのノード数を CPU 使用率に応じて自動増減させる機能はどれですか。',
+   opts:['HPA（Horizontal Pod Autoscaler）','VPA（Vertical Pod Autoscaler）','クラスタオートスケーラ','Node Pool の手動リサイズ'],
+   correct:'C',
+   exp:'クラスタオートスケーラはノード（VM）数を自動で増減させます。HPA は Pod 数、VPA は Pod のリソース要求を自動調整します。これらは用途が異なり、組み合わせて使うことが多いです。'},
 
-  // ストレージ・DB
-  {id:'q17',cat:'ストレージ・DB',
+  // ── ストレージ・DB ──
+  {id:'q28',cat:'ストレージ・DB',
    text:'世界中のユーザーに対し、強整合性を保ちながら水平スケールできるリレーショナル DB が必要です。最適なサービスはどれですか。',
    opts:['Cloud SQL（PostgreSQL）','Bigtable','Spanner','Firestore'],
    correct:'C',
    exp:'Spanner はグローバル分散・強整合性・水平スケールを兼ね備えた唯一のマネージド RDB です。99.999% の SLA を持ちます。'},
-  {id:'q18',cat:'ストレージ・DB',
+  {id:'q29',cat:'ストレージ・DB',
    text:'ログを 7 年間保管する必要があります。ほとんどアクセスしません。コスト最適なストレージクラスはどれですか。',
    opts:['Standard','Nearline','Coldline','Archive'],
    correct:'D',
    exp:'年 1 回以下のアクセスで長期保管なら Archive が最安です。最低保存期間（365 日）を踏まえ、短期間での削除計画がない用途に向いています。'},
-  {id:'q19',cat:'ストレージ・DB',
+  {id:'q30',cat:'ストレージ・DB',
    text:'サーバーを管理せず、巨大なデータセットに SQL で分析クエリを実行したいです。適切なサービスはどれですか。',
    opts:['Cloud SQL','Memorystore','BigQuery','Firestore'],
    correct:'C',
    exp:'BigQuery はサーバーレスのデータウェアハウスで、クラスタ管理なしに SQL でペタバイト規模を分析できます。'},
-  {id:'q20',cat:'ストレージ・DB',
+  {id:'q31',cat:'ストレージ・DB',
    text:'BigQuery のクエリコストが高くなっています。スキャン量を減らすのに最も効果的な手法はどれですか。',
    opts:['テーブルを複数のリージョンに複製する','テーブルをパーティション分割し、クエリの WHERE 句でパーティション列をフィルタする','より大きな Compute Engine VM でクエリを実行する','Memorystore にデータをキャッシュする'],
    correct:'B',
    exp:'BigQuery のオンデマンド課金はスキャンしたデータ量に基づきます。パーティション分割＋フィルタでスキャン量を劇的に削減できます。'},
-  {id:'q21',cat:'ストレージ・DB',
+  {id:'q32',cat:'ストレージ・DB',
    text:'IoT デバイスから毎秒数百万件のセンサーデータが書き込まれます。低レイテンシで大規模書き込みに最適な DB はどれですか。',
    opts:['Cloud SQL','Bigtable','BigQuery','Firestore'],
    correct:'B',
    exp:'Bigtable は超大規模な書き込みと低レイテンシ読み取りに特化したワイドカラム型 NoSQL です。時系列データや IoT データの格納に最も適しています。'},
+  {id:'q33',cat:'ストレージ・DB',
+   text:'Cloud Storage で、オブジェクトへのアクセス制御として Google が推奨する方式はどれですか。',
+   opts:['オブジェクト ACL（アクセス制御リスト）','均一バケットレベルアクセス（IAM による管理）','allUsers への公開設定','バケットポリシーなしのデフォルト'],
+   correct:'B',
+   exp:'Google は均一バケットレベルアクセスを推奨しています。これにより IAM だけでアクセスを一元管理でき、オブジェクト単位の ACL のような分散した設定を避けられます。'},
+  {id:'q34',cat:'ストレージ・DB',
+   text:'Cloud SQL で RTO（目標復旧時間）を最小化するための高可用性構成はどれですか。',
+   opts:['手動バックアップを定期的に取得する','REGIONAL 可用性タイプで同一リージョン内に待機系を配置する','リードレプリカを別リージョンに作成する','毎時スナップショットを取得する'],
+   correct:'B',
+   exp:'Cloud SQL の HA 構成では REGIONAL を指定します。同一リージョンの別ゾーンにスタンバイを自動配置し、障害時に自動フェイルオーバーします。RTO は通常 1〜2 分程度です。'},
+  {id:'q35',cat:'ストレージ・DB',
+   text:'モバイルアプリとリアルタイムデータ同期が必要で、オフライン対応も求められます。最適なデータベースはどれですか。',
+   opts:['BigQuery','Cloud SQL','Firestore','Bigtable'],
+   correct:'C',
+   exp:'Firestore はサーバーレスのドキュメント型 NoSQL で、リアルタイムリスナーとオフラインキャッシュをネイティブサポートします。モバイル・Web アプリとの相性が最も良いです。'},
+  {id:'q36',cat:'ストレージ・DB',
+   text:'Cloud Storage のライフサイクル管理で実現できることとして正しいのはどれですか。',
+   opts:['一定期間後に自動でストレージクラスを変更できる','ライフサイクルルールはプロジェクト単位で設定する','ライフサイクルは手動実行のみで自動実行はできない','オブジェクトをダウンロードするたびにクラスが変わる'],
+   correct:'A',
+   exp:'ライフサイクルルールを使うと、作成から N 日後に Nearline → Coldline → Archive へ自動降格したり、N 日後に自動削除したりできます。バケット単位で設定し、コスト最適化に有効です。'},
 
-  // ネットワーク
-  {id:'q22',cat:'ネットワーク',
+  // ── ネットワーク ──
+  {id:'q37',cat:'ネットワーク',
    text:'東京と大阪の VM を同じ VPC のプライベート IP で通信させたいです。どのような構成にすればよいですか。',
    opts:['東京と大阪に別々の VPC を作り VPC ピアリングで接続する','1 つの VPC に東京と大阪のサブネットを作り、同じ VPC 内に VM を配置する','Cloud VPN でリージョン間を接続する','外部 IP を使いインターネット経由で通信する'],
    correct:'B',
    exp:'VPC はグローバルリソースです。1 つの VPC に複数リージョンのサブネットを持てるため、別 VPC を作ったりピアリングしたりする必要はありません。同じ VPC 内ならプライベート IP でリージョンをまたいで通信できます。'},
-  {id:'q23',cat:'ネットワーク',
+  {id:'q38',cat:'ネットワーク',
    text:'外部 IP を持たないプライベートな VM が外部パッケージリポジトリに接続するために必要なサービスはどれですか。',
    opts:['Cloud Armor','Cloud NAT','Cloud DNS','VPC ピアリング'],
    correct:'B',
    exp:'Cloud NAT を使うと、外部 IP を持たないインスタンスが外向きの通信を行えます。外部からの着信は受け付けないため、セキュリティを保ちながら外部接続できます。'},
-  {id:'q24',cat:'ネットワーク',
+  {id:'q39',cat:'ネットワーク',
    text:'複数プロジェクトでネットワークを一元管理し、同じ VPC のサブネットを共有して使えるようにしたいです。最適な構成はどれですか。',
    opts:['各プロジェクトに VPC を作り VPC ピアリングを設定する','ホストプロジェクトに VPC を作り Shared VPC でサービスプロジェクトに共有する','全リソースを 1 つのプロジェクトに集約する','Cloud VPN で各プロジェクトを接続する'],
    correct:'B',
    exp:'Shared VPC はホストプロジェクトのネットワークを複数のサービスプロジェクトで共有する仕組みです。ネットワーク一元管理とプロジェクト分離を両立できます。'},
-  {id:'q25',cat:'ネットワーク',
-   text:'複数チームがそれぞれのプロジェクトを持ちながら、ネットワーク構成は一元管理したいです。最も適切な構成はどれですか。',
-   opts:['各チームが VPC を作り VPC ピアリングで接続する','ホストプロジェクトに VPC を作り Shared VPC で各チームのプロジェクトに共有する','全リソースを 1 つのプロジェクトに集約する','Cloud VPN で各プロジェクトを接続する'],
+  {id:'q40',cat:'ネットワーク',
+   text:'アプリケーションへの DDoS 攻撃を防ぎ、カスタムルールで特定 IP をブロックしたいです。使うべきサービスはどれですか。',
+   opts:['Cloud NAT','Cloud Armor','Cloud CDN','Cloud DNS'],
    correct:'B',
-   exp:'Shared VPC はホストプロジェクトのネットワークを複数のサービスプロジェクトで共有します。ネットワーク一元管理とプロジェクト分離の両立ができます。'},
+   exp:'Cloud Armor は WAF（Web Application Firewall）と DDoS 保護機能を提供します。グローバル HTTP(S) ロードバランサーと組み合わせて使用し、IP ベースのルール・地理的ブロック・OWASP 対策ルールを適用できます。'},
+  {id:'q41',cat:'ネットワーク',
+   text:'オンプレミスのデータセンターと Google Cloud を高帯域・低レイテンシの専用線で接続したいです。最適なサービスはどれですか。',
+   opts:['Cloud VPN','Cloud Interconnect','VPC ピアリング','Cloud NAT'],
+   correct:'B',
+   exp:'Cloud Interconnect は物理専用線（Dedicated）または共有接続（Partner）で Google ネットワークに直接接続します。Cloud VPN はインターネット経由の暗号化トンネルで、帯域・レイテンシが Interconnect より劣ります。'},
+  {id:'q42',cat:'ネットワーク',
+   text:'VPC ファイアウォールルールで、特定のサービスアカウントを持つ VM にだけルールを適用できますか。',
+   opts:['不可能。ファイアウォールはネットワークタグにしか適用できない','可能。ターゲットをサービスアカウントで指定できる','可能だが、組織ポリシーの許可が別途必要','不可能。IP アドレス範囲のみ指定できる'],
+   correct:'B',
+   exp:'Google Cloud のファイアウォールルールは、ターゲットを「ネットワークタグ」または「サービスアカウント」で指定できます。サービスアカウントで指定するとタグの付け忘れによる設定ミスを防げます。'},
+  {id:'q43',cat:'ネットワーク',
+   text:'VPC ピアリングと Shared VPC の違いとして正しいのはどれですか。',
+   opts:['VPC ピアリングは 1 つの VPC を複数プロジェクトで共有する','Shared VPC はホストの VPC を複数のサービスプロジェクトが共有する。VPC ピアリングは 2 つの VPC を相互接続する','VPC ピアリングでは IAM をホスト側で一元管理できる','Shared VPC は同じプロジェクト内でのみ使用できる'],
+   correct:'B',
+   exp:'Shared VPC はホストプロジェクトの VPC をサービスプロジェクトが共有する仕組みで、ネットワーク管理を一元化できます。VPC ピアリングは 2 つの独立した VPC を相互接続しますが、ネットワーク管理は分散したままです。'},
+  {id:'q44',cat:'ネットワーク',
+   text:'Google Cloud のデフォルトのファイアウォールルールとして正しいのはどれですか。',
+   opts:['Ingress（外→内）は許可、Egress（内→外）は拒否','Ingress（外→内）は拒否、Egress（内→外）は許可','すべての通信がデフォルトで許可される','すべての通信がデフォルトで拒否される'],
+   correct:'B',
+   exp:'Google Cloud の暗黙のデフォルトルールは「Ingress 拒否・Egress 許可」です。外部からの着信はデフォルトでブロックされ、必要な通信だけを明示的に許可します。'},
 
-  // 運用・監視
-  {id:'q26',cat:'運用・監視',
+  // ── 運用・監視 ──
+  {id:'q45',cat:'運用・監視',
    text:'本番 VM の CPU 使用率が 80% を超えたら担当者に通知したいです。最も適切な設定はどれですか。',
    opts:['Cloud Logging のシンクを BigQuery に設定する','Cloud Monitoring のアラートポリシーを作成し、しきい値と通知チャネルを設定する','Cloud Trace でスパンを確認する','監査ログを有効化する'],
    correct:'B',
    exp:'メトリクスのしきい値超過を通知するには Cloud Monitoring のアラートポリシーを設定します。通知チャネル（メール・Slack 等）も合わせて設定します。'},
-  {id:'q27',cat:'運用・監視',
+  {id:'q46',cat:'運用・監視',
    text:'全プロジェクトのログを 2 年間保管し、SQL で分析できるようにしたいです。最も適切な方法はどれですか。',
    opts:['ログを VM のローカルディスクに保存する','Cloud Logging のシンクで BigQuery にエクスポートし、保持期間を設定する','Cloud Trace を有効化する','監査ログのデータアクセスログを無効のままにする'],
    correct:'B',
    exp:'Cloud Logging のシンクで BigQuery へエクスポートすると、長期保管しながら SQL で分析できます。'},
-  {id:'q28',cat:'運用・監視',
+  {id:'q47',cat:'運用・監視',
    text:'「誰が VM を削除したか」を事後に確認したいです。どこを確認しますか。',
    opts:['Cloud Monitoring のカスタムメトリクス','Cloud Audit Logs の管理アクティビティログ','Cloud Trace のスパン','データアクセスログ'],
    correct:'B',
    exp:'管理アクティビティログは VM の作成・削除などの管理操作を常時記録しています。誰がいつ何をしたかを確認できます。'},
+  {id:'q48',cat:'運用・監視',
+   text:'アプリのレスポンスタイムが遅い原因を特定したいです。どのサービスを使いますか。',
+   opts:['Cloud Monitoring','Cloud Logging','Cloud Trace','Error Reporting'],
+   correct:'C',
+   exp:'Cloud Trace は分散トレーシングサービスです。リクエストが複数のサービスを通過する際のレイテンシをスパン単位で可視化し、ボトルネックを特定できます。'},
+  {id:'q49',cat:'運用・監視',
+   text:'VM の詳細なメモリ使用率やカスタムログを Cloud Monitoring / Logging に送りたいです。何をインストールする必要がありますか。',
+   opts:['Cloud SDK','Ops Agent','Logging ライブラリのみ','kubectl'],
+   correct:'B',
+   exp:'Ops Agent を VM にインストールすることで、デフォルトでは取得できないメモリ・ディスク IO の詳細メトリクスやアプリケーションログを Cloud Monitoring / Logging に収集できます。'},
+  {id:'q50',cat:'運用・監視',
+   text:'Cloud Monitoring のアラートについて正しい説明はどれですか。',
+   opts:['アラートが発生するとリソースが自動停止する','アラートは通知のみ。自動対応が必要なら Pub/Sub + Cloud Functions を組み合わせる','アラートは 1 つの通知チャネルにしか送れない','アラートは Cloud Logging からしか設定できない'],
+   correct:'B',
+   exp:'Cloud Monitoring のアラートは通知（メール・Slack・PagerDuty・Pub/Sub 等）を行うだけです。自動でリソースを停止・スケールするわけではありません。自動対応が必要な場合は Pub/Sub + Cloud Functions / Cloud Run で実装します。'},
 
-  // 課金・IaC
-  {id:'q29',cat:'課金・IaC',
+  // ── 課金・IaC ──
+  {id:'q51',cat:'課金・IaC',
    text:'月のクラウド支出が予算を超えた場合に自動でリソースを停止したいです。最も適切な実装はどれですか。',
    opts:['予算アラートを設定するだけで自動停止される','予算アラートを Pub/Sub トピックに連携し、Cloud Functions で停止処理を実装する','請求先アカウントを削除する','すべての VM の自動スケールを無効にする'],
    correct:'B',
    exp:'予算アラートはデフォルトで「通知のみ」です。自動停止が必要な場合は、アラートを Pub/Sub に連携し、そのメッセージを受け取った Cloud Functions や Cloud Run でリソース停止処理を実装します。'},
-  {id:'q30',cat:'課金・IaC',
+  {id:'q52',cat:'課金・IaC',
    text:'複数の環境（本番・ステージング・開発）に同じインフラ構成を繰り返しデプロイしたいです。最も推奨される方法はどれですか。',
    opts:['コンソールで毎回手動作業を繰り返す','Terraform でインフラをコード化し、環境ごとに変数を変えてデプロイする','スナップショットをコピーして環境を複製する','Cloud Shell のヒストリからコマンドを再実行する'],
    correct:'B',
    exp:'Terraform でインフラをコード化し、変数（variables）で環境差分を吸収する構成が再現性・管理性ともに最も優れています。'},
-  {id:'q31',cat:'課金・IaC',
+  {id:'q53',cat:'課金・IaC',
    text:'Cloud Run サービスが Cloud SQL に接続するための認証情報を最もセキュアに管理する方法はどれですか。',
    opts:['パスワードをソースコードにハードコーディングする','Secret Manager にパスワードを保存し、Cloud Run の SA に Secret アクセサーロールを付与する','パスワードを Cloud Storage バケットに保存する','Cloud Run のすべてのサービスに Owner ロールを付与する'],
    correct:'B',
    exp:'Secret Manager で機密情報を安全に管理し、最小権限のサービスアカウントでアクセスするパターンがベストプラクティスです。ハードコーディングや権限過多は避けます。'},
+  {id:'q54',cat:'課金・IaC',
+   text:'Terraform の terraform plan コマンドの目的はどれですか。',
+   opts:['インフラへの変更を実際に適用する','現在の状態と設定ファイルの差分をプレビューする（実際の変更はしない）','プロバイダのプラグインをダウンロードする','state ファイルを削除する'],
+   correct:'B',
+   exp:'terraform plan は現在のインフラ状態（tfstate）と HCL 定義の差分を表示するドライランです。実際の変更は行いません。terraform apply で実際に適用します。'},
+  {id:'q55',cat:'課金・IaC',
+   text:'Google Cloud の課金データを分析して部門別コストを可視化したいです。最適な方法はどれですか。',
+   opts:['Cloud Monitoring のメトリクスダッシュボードを使う','課金データを BigQuery にエクスポートし、SQL や Looker Studio で分析する','請求先アカウントを部門ごとに作成するだけでよい','Cloud Logging でコストログを確認する'],
+   correct:'B',
+   exp:'課金データを BigQuery にエクスポートすると、部門・プロジェクト・ラベル・サービス別にコストを詳細分析できます。Looker Studio（旧 Data Studio）と組み合わせてダッシュボード化するのが一般的です。'},
+  {id:'q56',cat:'課金・IaC',
+   text:'Pub/Sub について正しい説明はどれですか。',
+   opts:['1 対 1 のメッセージングにしか対応していない','グローバルな非同期メッセージングサービスで、プロデューサーとコンシューマーを疎結合にできる','メッセージは永続化されず、即時配信されなければ破棄される','SQL クエリでメッセージをフィルタリングする機能はない'],
+   correct:'B',
+   exp:'Pub/Sub はグローバルなフルマネージドのメッセージングサービスです。トピックにパブリッシュされたメッセージは 1 つ以上のサブスクリプションに配信され、プロデューサーとコンシューマーを非同期に疎結合にできます。メッセージは最大 7 日間保持されます。'},
 ];
 
 const LABELS = ['A','B','C','D'];
-const STORAGE_KEY = 'gcp_quiz_v1';
+const STORAGE_KEY = 'gcp_quiz_v2';
 
 // ── State ──────────────────────────────────────────────────────
-let answers = {};  // { qId: { selected: 'B', correct: true } }
+let answers = {};
 let currentCat = 'all';
+let shuffledQuestions = [];
 
 function loadAnswers() {
   try { answers = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
@@ -362,34 +484,41 @@ function saveAnswers() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(answers));
 }
 
+// Fisher-Yates shuffle
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 // ── Render ─────────────────────────────────────────────────────
 function render() {
   const main = document.getElementById('main');
   main.innerHTML = '';
-  const filtered = currentCat === 'all'
-    ? QUESTIONS
-    : QUESTIONS.filter(q => q.cat === currentCat);
 
-  document.getElementById('count-bar').textContent =
-    `${filtered.length} 問表示中`;
-  document.getElementById('empty').style.display =
-    filtered.length === 0 ? 'block' : 'none';
+  const filtered = currentCat === 'all'
+    ? shuffledQuestions
+    : shuffledQuestions.filter(q => q.cat === currentCat);
+
+  document.getElementById('count-bar').textContent = `${filtered.length} 問表示中`;
+  document.getElementById('empty').style.display = filtered.length === 0 ? 'block' : 'none';
 
   filtered.forEach((q, qi) => {
     const ans = answers[q.id];
     const answered = !!ans;
-    const correct = answered && ans.correct;
+    const isCorrect = answered && ans.correct;
 
     const card = document.createElement('div');
-    card.className = 'q-card' + (answered ? (correct ? ' correct' : ' wrong') : '');
-    card.id = 'card-'+q.id;
+    card.className = 'q-card' + (answered ? (isCorrect ? ' correct' : ' wrong') : '');
+    card.id = 'card-' + q.id;
 
-    // Badge
     const badge = answered
-      ? `<span class="q-badge ${correct ? 'ok' : 'ng'}">${correct ? '✓ 正解' : '✗ 不正解'}</span>`
+      ? `<span class="q-badge ${isCorrect ? 'ok' : 'ng'}">${isCorrect ? '✓ 正解' : '✗ 不正解'}</span>`
       : '';
 
-    // Options HTML
     const optsHtml = q.opts.map((opt, i) => {
       const lbl = LABELS[i];
       let cls = '';
@@ -404,15 +533,17 @@ function render() {
       </div>`;
     }).join('');
 
-    // Explanation
-    const expCls = answered ? (correct ? 'correct-exp' : 'wrong-exp') : '';
-    const expLabel = answered ? (correct ? '✅ 正解：'+q.correct : '❌ 不正解 — 正解：'+q.correct) : '解説';
+    const expCls = answered ? (isCorrect ? 'correct-exp' : 'wrong-exp') : '';
+    const expLabel = answered
+      ? (isCorrect ? '✅ 正解：' + q.correct : '❌ 不正解 — 正解：' + q.correct)
+      : '解説';
     const expShow = answered ? 'show' : '';
+    const revealLabel = answered ? '解説を閉じる ▲' : '解説を見る ▼';
 
     card.innerHTML = `
       <div class="q-head">
         <div class="q-meta">
-          <span class="q-num">Q${String(qi+1).padStart(2,'0')}</span>
+          <span class="q-num">Q${String(qi + 1).padStart(2, '0')}</span>
           <span class="q-cat">${q.cat}</span>
           ${badge}
         </div>
@@ -423,7 +554,7 @@ function render() {
         <div class="q-exp-label">${expLabel}</div>
         ${q.exp}
       </div>
-      <button class="q-reveal" onclick="toggleExp('${q.id}',this)">${answered ? '解説を閉じる ▲' : '解説を見る ▼'}</button>
+      <button class="q-reveal" onclick="toggleExp('${q.id}',this)">${revealLabel}</button>
     `;
     main.appendChild(card);
   });
@@ -432,13 +563,13 @@ function render() {
 }
 
 function toggleExp(qid, btn) {
-  const exp = document.getElementById('exp-'+qid);
+  const exp = document.getElementById('exp-' + qid);
   const shown = exp.classList.toggle('show');
   btn.textContent = shown ? '解説を閉じる ▲' : '解説を見る ▼';
 }
 
 function selectOpt(qid, lbl) {
-  if (answers[qid]) return; // already answered
+  if (answers[qid]) return;
   const q = QUESTIONS.find(q => q.id === qid);
   const isCorrect = lbl === q.correct;
   answers[qid] = { selected: lbl, correct: isCorrect };
@@ -448,17 +579,15 @@ function selectOpt(qid, lbl) {
 }
 
 function updateCard(q, selected, isCorrect) {
-  const card = document.getElementById('card-'+q.id);
+  const card = document.getElementById('card-' + q.id);
   card.classList.add(isCorrect ? 'correct' : 'wrong');
 
-  // Update badge
   const meta = card.querySelector('.q-meta');
   const badge = document.createElement('span');
   badge.className = 'q-badge ' + (isCorrect ? 'ok' : 'ng');
   badge.textContent = isCorrect ? '✓ 正解' : '✗ 不正解';
   meta.appendChild(badge);
 
-  // Update options
   card.querySelectorAll('.q-opt').forEach(el => {
     el.classList.add('disabled');
     const lbl = el.querySelector('.q-opt-label').textContent;
@@ -466,12 +595,11 @@ function updateCard(q, selected, isCorrect) {
     else if (lbl === selected && !isCorrect) el.classList.add('wrong-sel');
   });
 
-  // Show explanation
-  const exp = document.getElementById('exp-'+q.id);
+  const exp = document.getElementById('exp-' + q.id);
   exp.classList.add('show', isCorrect ? 'correct-exp' : 'wrong-exp');
   exp.querySelector('.q-exp-label').textContent = isCorrect
-    ? '✅ 正解：'+q.correct
-    : '❌ 不正解 — 正解：'+q.correct;
+    ? '✅ 正解：' + q.correct
+    : '❌ 不正解 — 正解：' + q.correct;
 
   const revBtn = card.querySelector('.q-reveal');
   revBtn.textContent = '解説を閉じる ▲';
@@ -498,7 +626,7 @@ function filterCat(btn, cat) {
   btn.classList.add('active');
   currentCat = cat;
   render();
-  window.scrollTo({top:0, behavior:'smooth'});
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ── Reset ──────────────────────────────────────────────────────
@@ -513,6 +641,7 @@ function resetAll() {
 
 // ── Start ──────────────────────────────────────────────────────
 loadAnswers();
+shuffledQuestions = shuffle(QUESTIONS);  // ランダム順（ページ読み込みごとに変わる）
 render();
 </script>
 </body>
