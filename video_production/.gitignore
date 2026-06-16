@@ -1,0 +1,6 @@
+# intermediate build artifacts
+output/_tmp/
+output/_*.png
+output/_*.wav
+__pycache__/
+*.pyc
